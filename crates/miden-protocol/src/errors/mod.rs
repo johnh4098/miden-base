@@ -475,6 +475,8 @@ pub enum AssetError {
 pub enum TokenSymbolError {
     #[error("token symbol value {0} cannot exceed {max}", max = TokenSymbol::MAX_ENCODED_VALUE)]
     ValueTooLarge(u64),
+    #[error("token symbol value {0} is below the minimum valid encoded value {min}", min = TokenSymbol::MIN_ENCODED_VALUE)]
+    ValueTooSmall(u64),
     #[error("token symbol should have length between 1 and 12 characters, but {0} was provided")]
     InvalidLength(usize),
     #[error("token symbol contains a character that is not uppercase ASCII")]

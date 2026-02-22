@@ -15,6 +15,13 @@ impl TokenSymbol {
     /// The length of the set of characters that can be used in a token's name.
     pub const ALPHABET_LENGTH: u64 = 26;
 
+    /// The minimum integer value of an encoded [`TokenSymbol`].
+    ///
+    /// This value encodes the "A" token symbol (the shortest, lexicographically smallest valid
+    /// symbol). Any [`Felt`] value below this must be rejected as it cannot represent a valid
+    /// token symbol.
+    pub const MIN_ENCODED_VALUE: u64 = 1;
+
     /// The maximum integer value of an encoded [`TokenSymbol`].
     ///
     /// This value encodes the "ZZZZZZZZZZZZ" token symbol.
@@ -87,6 +94,9 @@ impl TryFrom<Felt> for TokenSymbol {
 
     fn try_from(felt: Felt) -> Result<Self, Self::Error> {
         // Check if the felt value is within the valid range
+        if felt.as_int() < Self::MIN_ENCODED_VALUE {
+            return Err(TokenSymbolError::ValueTooSmall(felt.as_int()));
+        }
         if felt.as_int() > Self::MAX_ENCODED_VALUE {
             return Err(TokenSymbolError::ValueTooLarge(felt.as_int()));
         }
@@ -332,5 +342,19 @@ mod test {
     #[should_panic(expected = "invalid token symbol")]
     fn token_symbol_panics_on_number() {
         TokenSymbol::from_static_str("ETH1");
+    }
+
+    #[test]
+    fn try_from_felt_zero_returns_value_too_small() {
+        let result = TokenSymbol::try_from(Felt::new(0));
+        assert_matches!(result.unwrap_err(), TokenSymbolError::ValueTooSmall(0));
+    }
+
+    #[test]
+    fn try_from_felt_min_encoded_value_succeeds() {
+        // MIN_ENCODED_VALUE (1) is the encoding of "A" — must be accepted
+        let result = TokenSymbol::try_from(Felt::new(TokenSymbol::MIN_ENCODED_VALUE));
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().to_string().unwrap(), "A");
     }
 }
